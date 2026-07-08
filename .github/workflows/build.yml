@@ -55,22 +55,12 @@ jobs:
             echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 -d > GoogleService-Info.plist
           fi
 
-      - name: Debug expo config (shows real error)
-        run: |
-          set +e
-          npx expo config --json --type public > expo-config-output.log 2>&1
-          code=$?
-          echo "----- expo config output -----"
-          cat expo-config-output.log
-          echo "-------------------------------"
-          exit $code
-
-      - name: Run expo-doctor
-        run: |
-          set +e
-          npx expo-doctor > expo-doctor-output.log 2>&1
-          cat expo-doctor-output.log
-          exit 0
-
       - name: Build on EAS
-        run: eas build --platform ${{ github.event.inputs.platform || 'all' }} --profile ${{ github.event.inputs.profile || 'preview' }} --non-interactive
+        run: |
+          set +e
+          eas build --platform ${{ github.event.inputs.platform || 'all' }} --profile ${{ github.event.inputs.profile || 'preview' }} --non-interactive > eas-build-output.log 2>&1
+          code=$?
+          echo "----- eas build output -----"
+          cat eas-build-output.log
+          echo "-----------------------------"
+          exit $code
