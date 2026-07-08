@@ -55,6 +55,24 @@ jobs:
             echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 -d > GoogleService-Info.plist
           fi
 
+      - name: Debug - call @expo/config directly for full stack trace
+        run: |
+          set +e
+          node -e "
+            try {
+              const { getConfig } = require('@expo/config');
+              const result = getConfig(process.cwd(), { skipSDKVersionRequirement: true, isPublicConfig: true });
+              console.log('SUCCESS');
+              console.log(JSON.stringify(result.exp, null, 2).slice(0, 2000));
+            } catch (e) {
+              console.error('CONFIG LOAD FAILED:');
+              console.error(e && e.stack ? e.stack : e);
+            }
+          " > expo-config-direct.log 2>&1
+          echo "----- direct @expo/config output -----"
+          cat expo-config-direct.log
+          echo "----------------------------------------"
+
       - name: Build on EAS
         run: |
           set +e
