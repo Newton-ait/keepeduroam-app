@@ -35,7 +35,7 @@
     },
     "plugins": [
       [
-        "@react-native-google-mobile-ads",
+        "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-8589950233987350~8424115612",
           "iosAppId": "ca-app-pub-8589950233987350~8424115612"
