@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { RewardedAd, TestIds } from '@react-native-google-mobile-ads';
+import { RewardedAd, TestIds } from 'react-native-google-mobile-ads';
 
 export const AD_UNITS = {
   android: {
