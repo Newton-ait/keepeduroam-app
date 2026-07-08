@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "541817234832",
+    "project_id": "keepeduroam",
+    "storage_bucket": "keepeduroam.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:541817234832:android:50841b7d8e69a2d5e27f15",
+        "android_client_info": {
+          "package_name": "com.keepeduroam.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4fa1vwsYPUfJomdayIAqSBkvC5hIC8tE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
