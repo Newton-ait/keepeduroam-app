@@ -8,7 +8,7 @@ on:
       platform:
         description: 'Platform to build for'
         required: true
-        default: 'all'
+        default: 'android'
         type: choice
         options:
           - all
@@ -76,7 +76,7 @@ jobs:
       - name: Build on EAS
         run: |
           set +e
-          eas build --platform ${{ github.event.inputs.platform || 'all' }} --profile ${{ github.event.inputs.profile || 'preview' }} --non-interactive > eas-build-output.log 2>&1
+          eas build --platform ${{ github.event.inputs.platform || 'android' }} --profile ${{ github.event.inputs.profile || 'preview' }} --non-interactive > eas-build-output.log 2>&1
           code=$?
           echo "----- eas build output -----"
           cat eas-build-output.log
