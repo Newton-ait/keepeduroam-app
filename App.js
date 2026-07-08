@@ -15,7 +15,7 @@ import { LoadingScreen } from './src/components/LoadingScreen';
 import firebase from '@react-native-firebase/app';
 import analytics from '@react-native-firebase/analytics';
 import crashlytics from '@react-native-firebase/crashlytics';
-import mobileAds from '@react-native-google-mobile-ads';
+import mobileAds from 'react-native-google-mobile-ads';
 
 function Root() {
   const { isLoading } = useApp();
