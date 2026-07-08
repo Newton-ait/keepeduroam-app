@@ -30,10 +30,18 @@
     },
     "extra": {
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "99af5d72-f479-4c21-8f27-60d585aa169d"
       }
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
       [
         "react-native-google-mobile-ads",
         {
