@@ -56,11 +56,21 @@ jobs:
           fi
 
       - name: Debug expo config (shows real error)
-        run: npx expo config --json --type public
+        run: |
+          set +e
+          npx expo config --json --type public > expo-config-output.log 2>&1
+          code=$?
+          echo "----- expo config output -----"
+          cat expo-config-output.log
+          echo "-------------------------------"
+          exit $code
 
       - name: Run expo-doctor
-        run: npx expo-doctor
-        continue-on-error: true
+        run: |
+          set +e
+          npx expo-doctor > expo-doctor-output.log 2>&1
+          cat expo-doctor-output.log
+          exit 0
 
       - name: Build on EAS
         run: eas build --platform ${{ github.event.inputs.platform || 'all' }} --profile ${{ github.event.inputs.profile || 'preview' }} --non-interactive
