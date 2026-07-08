@@ -25,7 +25,7 @@
     "@react-navigation/bottom-tabs": "^6.5.20",
     "react-native-vector-icons": "^10.1.0",
     "socket.io-client": "^4.7.5",
-    "react-native-google-mobile-ads": "12.4.1",
+    "react-native-google-mobile-ads": "^13.6.0",
     "@react-native-async-storage/async-storage": "1.23.1",
     "react-native-device-info": "^10.12.0",
     "@react-native-firebase/app": "^20.0.0",
