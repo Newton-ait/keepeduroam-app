@@ -1,13 +1,12 @@
 // src/components/UseMode.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { useSocketContext } from '../context/SocketContext';
 import { StatusBar } from './StatusBar';
 import { SessionTimer } from './SessionTimer';
-import { AdReward } from './AdReward';
 import COLORS from '../theme/colors';
 import { getSession, isSessionExpired } from '../utils/storage';
 
@@ -16,6 +15,11 @@ const WORKER_URL = 'https://keepeduroam.aitdevlabs.workers.dev';
 /**
  * Dedicated "use data" screen: this device relays through a provider's
  * shared connection, drawing down previously stored time.
+ *
+ * This screen no longer renders its own <AdReward /> — that previously
+ * duplicated the "Watch Ad" button also present on the Earn tab. Earning
+ * more time now happens exclusively on the Earn tab; this screen links
+ * there instead.
  */
 export function UseMode({ navigation }) {
   const {
@@ -26,7 +30,6 @@ export function UseMode({ navigation }) {
     updateAdData,
     updateServerStatus,
     timeData,
-    updateTimeData,
     switchMode,
   } = useApp();
   useSocketContext();
@@ -36,7 +39,9 @@ export function UseMode({ navigation }) {
 
   // Tabs stay mounted after first visit, so mode must be (re)synced on
   // focus rather than on mount alone — this is what drives the socket's
-  // register_provider vs register_consumer choice.
+  // register_provider vs register_consumer choice. (The socket itself no
+  // longer reconnects on mode change — see useSocket.js — so this is now
+  // a cheap re-registration, not a full teardown.)
   useFocusEffect(
     useCallback(() => {
       switchMode('use');
@@ -81,24 +86,14 @@ export function UseMode({ navigation }) {
     }
   };
 
-  const handleReward = ({ hours, session }) => {
-    if (session?.expiresAt) {
-      setExpiresAt(session.expiresAt);
-      setExpired(false);
-      updateTimeData({ ...timeData, expires_at: session.expiresAt });
-    }
-    fetchAdStatus();
-    Alert.alert('✅ Time Extended!', `You earned +${hours} hour${hours > 1 ? 's' : ''}!`);
-  };
-
-  const handleAdError = () => {
-    Alert.alert('Error', 'Failed to show ad. Please try again.');
-  };
-
   const onRefresh = async () => {
     setRefreshing(true);
     await Promise.all([fetchAdStatus(), fetchStatus(), loadLocalSession()]);
     setRefreshing(false);
+  };
+
+  const goToEarn = () => {
+    navigation?.navigate?.('Earn');
   };
 
   return (
@@ -132,21 +127,12 @@ export function UseMode({ navigation }) {
           </View>
         )}
 
-        <View style={styles.adSection}>
-          <View style={styles.adHeader}>
-            <Text style={styles.adTitle}>🎬 Extend Your Time</Text>
-            <Text style={styles.adSubtitle}>
-              {adData.remaining} / {adData.max} ads remaining today
-            </Text>
-          </View>
-          <AdReward deviceId={deviceId} adData={adData} onReward={handleReward} onError={handleAdError} />
-        </View>
-
-        <View style={styles.serverInfo}>
-          <Text style={styles.serverInfoText}>
-            🔒 256-bit encrypted • {serverStatus.servers || 0} servers online
+        <TouchableOpacity style={styles.earnLink} onPress={goToEarn}>
+          <Ionicons name="trophy-outline" size={18} color={COLORS.primary} />
+          <Text style={styles.earnLinkText}>
+            Watch an Ad to Extend ({adData.remaining}/{adData.max} left today)
           </Text>
-        </View>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -209,33 +195,20 @@ const styles = StyleSheet.create({
     color: COLORS.danger,
     fontSize: 12,
   },
-  adSection: {
-    marginHorizontal: 16,
-    padding: 16,
-    backgroundColor: COLORS.secondary,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  adHeader: {
-    marginBottom: 12,
-  },
-  adTitle: {
-    color: COLORS.text,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  adSubtitle: {
-    color: COLORS.textMuted,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  serverInfo: {
-    marginTop: 16,
+  earnLink: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.gold,
+    marginHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
   },
-  serverInfoText: {
-    color: COLORS.textMuted,
-    fontSize: 12,
+  earnLinkText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

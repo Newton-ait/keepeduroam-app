@@ -1,19 +1,25 @@
+// src/components/StatusBar.js
 import React from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet } from 'react-native';
 import COLORS from '../theme/colors';
 
+// Deliberately simple: just "are we connected or not." Previously this
+// also surfaced server/user counts ("3 servers, 12 users") — internal
+// relay-network details a user has no reason to see and that don't mean
+// anything to them. The relay mechanism (who they're actually connecting
+// through) is meant to be invisible to the user by design; this brought
+// the status bar in line with that.
 export function StatusBar({ connected, serverStatus }) {
   const getStatusColor = () => {
     if (!connected) return COLORS.danger;
-    if (serverStatus.online) return COLORS.success;
+    if (serverStatus?.online) return COLORS.success;
     return COLORS.warning;
   };
 
   const getStatusText = () => {
     if (!connected) return 'Disconnected';
-    if (serverStatus.online) return `Online (${serverStatus.servers} servers)`;
-    return 'Connecting...';
+    if (serverStatus?.online) return 'Connected';
+    return 'Connecting…';
   };
 
   return (
@@ -22,21 +28,6 @@ export function StatusBar({ connected, serverStatus }) {
         <View style={[styles.dot, { backgroundColor: getStatusColor() }]} />
         <Text style={styles.statusText}>{getStatusText()}</Text>
       </View>
-      {connected && serverStatus.online && (
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Ionicons name="server-outline" size={14} color={COLORS.textMuted} />
-            <Text style={styles.statText}>{serverStatus.servers || 0}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="people-outline" size={14} color={COLORS.textMuted} />
-            <Text style={styles.statText}>{serverStatus.users || 0}</Text>
-          </View>
-          {!connected && (
-            <ActivityIndicator size="small" color={COLORS.accent} style={styles.loader} />
-          )}
-        </View>
-      )}
     </View>
   );
 }
@@ -63,23 +54,5 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 12,
     fontWeight: '500',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    marginTop: 4,
-    alignItems: 'center',
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  statText: {
-    color: COLORS.textMuted,
-    fontSize: 11,
-    marginLeft: 4,
-  },
-  loader: {
-    marginLeft: 8,
   },
 });

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
-import { AdReward } from './AdReward';
+import { AdReward, getAdErrorMessage } from './AdReward';
 import COLORS from '../theme/colors';
 
 const WORKER_URL = 'https://keepeduroam.aitdevlabs.workers.dev';
@@ -13,6 +13,9 @@ const WORKER_URL = 'https://keepeduroam.aitdevlabs.workers.dev';
  * time. Wraps the AdReward component with the context wiring (device id,
  * ad status) it needs, since a bare component can't be used directly as
  * a tab screen.
+ *
+ * This is the only screen that renders <AdReward /> — it previously also
+ * appeared in UseMode, giving users two separate "Watch Ad" buttons.
  */
 export function EarnScreen() {
   const { deviceId, adData, points, timeData, updateAdData, updateTimeData } = useApp();
@@ -40,8 +43,8 @@ export function EarnScreen() {
     Alert.alert('✅ Time Extended!', `You earned +${hours} hour${hours > 1 ? 's' : ''}!`);
   };
 
-  const handleAdError = () => {
-    Alert.alert('Error', 'Failed to show ad. Please try again.');
+  const handleAdError = (error) => {
+    Alert.alert('Ad Unavailable', getAdErrorMessage(error));
   };
 
   const onRefresh = async () => {

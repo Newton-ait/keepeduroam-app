@@ -8,6 +8,7 @@ import { useSocketContext } from '../context/SocketContext';
 import { StatusBar } from './StatusBar';
 import { TimeDisplay } from './TimeDisplay';
 import COLORS from '../theme/colors';
+import { authFetch } from '../utils/storage';
 
 const WORKER_URL = 'https://keepeduroam.aitdevlabs.workers.dev';
 
@@ -23,7 +24,9 @@ export function StoreMode({ navigation }) {
 
   // Tabs stay mounted after first visit, so mode must be (re)synced on
   // focus rather than on mount alone — this is what drives the socket's
-  // register_provider vs register_consumer choice.
+  // register_provider vs register_consumer choice. (The socket itself no
+  // longer reconnects on mode change — see useSocket.js — so this is now
+  // a cheap re-registration, not a full teardown.)
   useFocusEffect(
     useCallback(() => {
       switchMode('store');
@@ -38,7 +41,9 @@ export function StoreMode({ navigation }) {
 
   const fetchTimeData = async () => {
     try {
-      const response = await fetch(`${WORKER_URL}/time/${deviceId}`);
+      // /time/{id} now requires the device's JWT — authFetch attaches it
+      // automatically if one is stored.
+      const response = await authFetch(`${WORKER_URL}/time/${deviceId}`);
       const data = await response.json();
       updateTimeData(data);
     } catch (error) {
@@ -70,7 +75,7 @@ export function StoreMode({ navigation }) {
       isSharing ? '⏸ Sharing Paused' : '📡 Sharing Started',
       isSharing
         ? 'You have stopped sharing your connection.'
-        : 'Your Wi-Fi data is now being stored securely for others to relay through.'
+        : 'Your Wi-Fi data is now being stored for others to relay through.'
     );
   };
 
@@ -115,12 +120,6 @@ export function StoreMode({ navigation }) {
         <View style={styles.pointsCard}>
           <Ionicons name="star-outline" size={18} color={COLORS.gold} />
           <Text style={styles.pointsText}>{points} points earned</Text>
-        </View>
-
-        <View style={styles.serverInfo}>
-          <Text style={styles.serverInfoText}>
-            🔒 256-bit encrypted • {serverStatus.servers || 0} servers online
-          </Text>
         </View>
       </ScrollView>
     </View>
@@ -186,13 +185,5 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontSize: 14,
     fontWeight: '600',
-  },
-  serverInfo: {
-    marginTop: 16,
-    alignItems: 'center',
-  },
-  serverInfoText: {
-    color: COLORS.textMuted,
-    fontSize: 12,
   },
 });

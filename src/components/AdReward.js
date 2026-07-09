@@ -1,12 +1,42 @@
 // src/components/AdReward.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../theme/colors';
 import { showAd, loadAd, createRewardedAd } from '../utils/ads';
 import { extendSession } from '../utils/storage';
+import { isAdsReady, subscribeAdsReady } from '../utils/adsReady';
 
 const WORKER_URL = 'https://keepeduroam.aitdevlabs.workers.dev';
+
+// Distinct failure reasons so the caller (EarnScreen / UseMode) can show
+// a message that actually matches what happened, instead of every
+// possible failure collapsing into one generic
+// "Failed to show ad. Please try again."
+export const AD_ERROR = {
+  NOT_READY: 'ADS_NOT_READY',
+  NO_AD_AVAILABLE: 'NO_AD_AVAILABLE',
+  LOAD_FAILED: 'AD_LOAD_FAILED',
+  SHOW_FAILED: 'AD_SHOW_FAILED',
+};
+
+// Turns the Error thrown from handleWatchAd into a message worth
+// actually showing the user, instead of the old one-size-fits-all
+// "Failed to show ad. Please try again."
+export function getAdErrorMessage(error) {
+  switch (error?.message) {
+    case AD_ERROR.NOT_READY:
+      return 'Ads are still loading. Please wait a moment and try again.';
+    case AD_ERROR.NO_AD_AVAILABLE:
+      return "No ads available right now — you may have hit today's limit, or the ad pool is temporarily empty.";
+    case AD_ERROR.LOAD_FAILED:
+      return "The ad couldn't load. Check your connection and try again.";
+    case AD_ERROR.SHOW_FAILED:
+      return 'The ad closed unexpectedly before finishing. Please try again.';
+    default:
+      return 'Something went wrong showing the ad. Please try again.';
+  }
+}
 
 /**
  * Self-contained rewarded-ad flow. Renders a button; tapping it fetches
@@ -16,6 +46,9 @@ const WORKER_URL = 'https://keepeduroam.aitdevlabs.workers.dev';
 export function AdReward({ deviceId, adData, onReward, onError }) {
   const [stage, setStage] = useState('idle'); // idle | fetching | loading | showing | done
   const [visible, setVisible] = useState(false);
+  const [adsReady, setAdsReadyState] = useState(isAdsReady());
+
+  useEffect(() => subscribeAdsReady(setAdsReadyState), []);
 
   const stageLabel = {
     idle: '',
@@ -28,6 +61,11 @@ export function AdReward({ deviceId, adData, onReward, onError }) {
   const handleWatchAd = async () => {
     if (stage !== 'idle' || !adData?.canWatch) return;
 
+    if (!adsReady) {
+      onError?.(new Error(AD_ERROR.NOT_READY));
+      return;
+    }
+
     try {
       setVisible(true);
       setStage('fetching');
@@ -38,15 +76,23 @@ export function AdReward({ deviceId, adData, onReward, onError }) {
       const nextAd = await adResponse.json();
 
       if (nextAd.error) {
-        throw new Error(nextAd.error);
+        throw new Error(AD_ERROR.NO_AD_AVAILABLE);
       }
 
       setStage('loading');
       const rewarded = createRewardedAd(nextAd.ad_unit_name);
-      await loadAd(rewarded);
+      try {
+        await loadAd(rewarded);
+      } catch (loadError) {
+        throw new Error(AD_ERROR.LOAD_FAILED);
+      }
 
       setStage('showing');
-      await showAd(rewarded);
+      try {
+        await showAd(rewarded);
+      } catch (showError) {
+        throw new Error(AD_ERROR.SHOW_FAILED);
+      }
 
       setStage('done');
       const extraSeconds = (nextAd.hours || 1) * 3600;
