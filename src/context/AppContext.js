@@ -1,14 +1,30 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { getDeviceId, getMode, saveMode, getUsername, getSession, isSessionExpired } from '../utils/storage';
+import {
+  getDeviceId,
+  clearDeviceId,
+  getMode,
+  saveMode,
+  getUsername,
+  getSession,
+  isSessionExpired,
+  getToken,
+  clearToken,
+  getDarkMode,
+  saveDarkMode,
+} from '../utils/storage';
+
+const WORKER_URL = 'https://keepeduroam.aitdevlabs.workers.dev';
 
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
   const [deviceId, setDeviceId] = useState(null);
+  const [token, setToken] = useState(null);
   const [mode, setMode] = useState('store');
   const [username, setUsername] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [darkMode, setDarkModeState] = useState(true);
   const [timeData, setTimeData] = useState({
     stored: 0,
     used: 0,
@@ -37,10 +53,14 @@ export function AppProvider({ children }) {
       const id = await getDeviceId();
       const savedMode = await getMode();
       const savedUsername = await getUsername();
+      const savedToken = await getToken();
+      const savedDarkMode = await getDarkMode();
 
       setDeviceId(id);
       setMode(savedMode);
       setUsername(savedUsername || 'Guest');
+      setToken(savedToken);
+      setDarkModeState(savedDarkMode);
 
       const session = await getSession();
       if (session) {
@@ -90,14 +110,47 @@ export function AppProvider({ children }) {
     setPoints(typeof data === 'number' ? data : data?.points || 0);
   };
 
+  const toggleDarkMode = async () => {
+    const next = !darkMode;
+    setDarkModeState(next);
+    await saveDarkMode(next);
+  };
+
+  // Retires the current device server-side (soft reset: stored time goes
+  // to 0, the ID itself remains technically valid/gettable — see backend
+  // notes) and clears local identity so a completely new device ID and
+  // JWT get issued on the next socket registration. The caller is
+  // responsible for warning the user they'll lose their stored time
+  // before invoking this.
+  const resetDevice = async () => {
+    try {
+      if (deviceId && token) {
+        await fetch(`${WORKER_URL}/device/${deviceId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+    } catch (error) {
+      console.error('Error retiring device:', error);
+    } finally {
+      await clearDeviceId();
+      await clearToken();
+      setToken(null);
+      const newId = await getDeviceId();
+      setDeviceId(newId);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
         deviceId,
+        token,
         mode,
         username,
         isConnected,
         isLoading,
+        darkMode,
         timeData,
         adData,
         serverStatus,
@@ -112,6 +165,9 @@ export function AppProvider({ children }) {
         updatePoints,
         setSessionExpired,
         setIsLoading,
+        setToken,
+        toggleDarkMode,
+        resetDevice,
       }}
     >
       {children}
