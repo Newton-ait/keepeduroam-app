@@ -1,15 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 import { useApp } from '../context/AppContext';
+import { saveToken } from '../utils/storage';
 
 const WORKER_URL = 'https://keepeduroam.aitdevlabs.workers.dev';
 
 export function useSocket() {
   const { deviceId, mode, setIsConnected, updatePoints } = useApp();
   const socketRef = useRef(null);
+  const modeRef = useRef(mode);
+  const didConnectOnceRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [lastRelayResult, setLastRelayResult] = useState(null);
 
+  // Keep a ref in sync so the 'connect' handler (created once per
+  // connection) always registers with whatever mode is current at the
+  // moment it fires, without needing `mode` in its own closure.
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+
+  // Connection lifecycle: depends only on deviceId. Previously this also
+  // depended on `mode`, which meant switching between the Store and Use
+  // tabs tore down and fully recreated the socket connection on every
+  // tab change — visible to users as the app "resetting." Mode changes
+  // after the initial connection are now handled by the effect below,
+  // which re-registers on the *existing* socket instead of reconnecting.
   useEffect(() => {
     if (!deviceId) return;
 
@@ -27,7 +43,7 @@ export function useSocket() {
       setIsConnected(true);
       setIsReady(true);
 
-      if (mode === 'store') {
+      if (modeRef.current === 'store') {
         socket.emit('register_provider', { id: deviceId });
       } else {
         socket.emit('register_consumer', { id: deviceId });
@@ -42,6 +58,9 @@ export function useSocket() {
 
     socket.on('registered', (data) => {
       console.log('Registered:', data);
+      if (data.token) {
+        saveToken(data.token);
+      }
       if (data.role === 'provider') {
         socket.emit('provider_ready', {});
       }
@@ -63,7 +82,7 @@ export function useSocket() {
     // and relay the result back through the socket.
     socket.on('relay_request', async (data) => {
       console.log('Relay request received:', data);
-      if (mode === 'store') {
+      if (modeRef.current === 'store') {
         await forwardRequest(socket, data);
       }
     });
@@ -81,11 +100,27 @@ export function useSocket() {
     });
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      socket.disconnect();
     };
-  }, [deviceId, mode]);
+  }, [deviceId]);
+
+  // Mode changes after the initial connection: re-register on the same
+  // socket rather than reconnecting. Skips the very first run, since the
+  // initial registration is already handled by the 'connect' handler
+  // above via modeRef.
+  useEffect(() => {
+    if (!didConnectOnceRef.current) {
+      didConnectOnceRef.current = true;
+      return;
+    }
+    if (!socketRef.current || !isReady || !deviceId) return;
+
+    if (mode === 'store') {
+      socketRef.current.emit('register_provider', { id: deviceId });
+    } else {
+      socketRef.current.emit('register_consumer', { id: deviceId });
+    }
+  }, [mode]);
 
   const forwardRequest = async (socket, data) => {
     try {
