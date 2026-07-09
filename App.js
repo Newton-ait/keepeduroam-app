@@ -6,6 +6,7 @@ import { AppProvider, useApp } from './src/context/AppContext';
 import { SocketProvider } from './src/context/SocketContext';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { LoadingScreen } from './src/components/LoadingScreen';
+import { setAdsReady } from './src/utils/adsReady';
 
 // Firebase & AdMob.
 // @react-native-firebase/app auto-initializes from the native
@@ -15,7 +16,7 @@ import { LoadingScreen } from './src/components/LoadingScreen';
 import firebase from '@react-native-firebase/app';
 import analytics from '@react-native-firebase/analytics';
 import crashlytics from '@react-native-firebase/crashlytics';
-import mobileAds from 'react-native-google-mobile-ads';
+import mobileAds, { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
 
 function Root() {
   const { isLoading } = useApp();
@@ -42,9 +43,29 @@ export default function App() {
         console.log('✅ Firebase initialized');
       }
 
+      // Must run before mobileAds().initialize() / any ad load: Google
+      // requires resolving (and, if required, showing) the UMP consent
+      // form before requesting ads. This was previously entirely
+      // missing, which both risks a policy violation and can contribute
+      // to ad requests failing or returning no fill.
+      try {
+        const consentInfo = await AdsConsent.requestInfoUpdate();
+        if (
+          consentInfo.isConsentFormAvailable &&
+          consentInfo.status === AdsConsentStatus.REQUIRED
+        ) {
+          await AdsConsent.showForm();
+        }
+      } catch (error) {
+        console.warn('Consent flow failed:', error);
+      }
+
       try {
         await mobileAds().initialize();
         console.log('✅ AdMob initialized');
+        if (!cancelled) {
+          setAdsReady(true);
+        }
       } catch (error) {
         console.warn('AdMob failed to initialize:', error);
       }

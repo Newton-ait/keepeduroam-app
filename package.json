@@ -32,7 +32,9 @@
     "@react-native-firebase/app": "^20.0.0",
     "@react-native-firebase/analytics": "^20.0.0",
     "@react-native-firebase/crashlytics": "^20.0.0",
-    "react-native-uuid": "^2.0.1"
+    "react-native-uuid": "^2.0.1",
+    "react-native-qrcode-svg": "^6.3.0",
+    "react-native-svg": "15.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
