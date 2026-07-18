@@ -13,7 +13,7 @@ const URLS = {
 };
 
 export function SettingsScreen() {
-  const { deviceId, mode, switchMode, darkMode, toggleDarkMode, resetDevice } = useApp();
+  const { deviceId, darkMode, toggleDarkMode, resetDevice } = useApp();
   const [shareVisible, setShareVisible] = useState(false);
   const [resetting, setResetting] = useState(false);
   const COLORS = getColors(darkMode);
@@ -67,24 +67,6 @@ export function SettingsScreen() {
         <Text style={styles.value} numberOfLines={1} ellipsizeMode="middle">
           {deviceId || 'Loading...'}
         </Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Default Mode</Text>
-        <View style={styles.modeRow}>
-          <TouchableOpacity
-            style={[styles.modeButton, mode === 'store' && styles.modeActive]}
-            onPress={() => switchMode('store')}
-          >
-            <Text style={[styles.modeText, mode === 'store' && styles.modeTextActive]}>Store</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.modeButton, mode === 'use' && styles.modeActive]}
-            onPress={() => switchMode('use')}
-          >
-            <Text style={[styles.modeText, mode === 'use' && styles.modeTextActive]}>Use</Text>
-          </TouchableOpacity>
-        </View>
       </View>
 
       <View style={styles.card}>
@@ -151,7 +133,7 @@ export function SettingsScreen() {
             <View style={styles.qrWrap}>
               <QRCode value={URLS.home} size={200} backgroundColor="#FFFFFF" color="#000000" />
             </View>
-            <TouchableOpacity style={styles.smallButton} onPress={() => setShareVisible(false)}>
+            <TouchableOpacity style={styles.qrCloseButton} onPress={() => setShareVisible(false)}>
               <Text style={styles.smallButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
@@ -199,31 +181,6 @@ const makeStyles = (COLORS) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-    },
-    modeRow: {
-      flexDirection: 'row',
-      marginTop: 4,
-    },
-    modeButton: {
-      paddingHorizontal: 20,
-      paddingVertical: 8,
-      borderRadius: 8,
-      backgroundColor: COLORS.primary,
-      borderWidth: 1,
-      borderColor: COLORS.border,
-      marginRight: 8,
-    },
-    modeActive: {
-      borderColor: COLORS.accent,
-      backgroundColor: 'rgba(78, 205, 196, 0.1)',
-    },
-    modeText: {
-      color: COLORS.textMuted,
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    modeTextActive: {
-      color: COLORS.accent,
     },
     shareRow: {
       flexDirection: 'row',
@@ -293,5 +250,16 @@ const makeStyles = (COLORS) =>
       padding: 16,
       borderRadius: 12,
       marginBottom: 16,
+    },
+    // Deliberately not reusing `smallButton` here: that style's flex:1
+    // is meant for two buttons sharing a row (see shareRow) and made
+    // this button balloon to fill the whole modal card when used alone.
+    qrCloseButton: {
+      backgroundColor: COLORS.accent,
+      paddingVertical: 10,
+      paddingHorizontal: 32,
+      borderRadius: 8,
+      alignItems: 'center',
+      alignSelf: 'center',
     },
   });

@@ -1,8 +1,7 @@
 // src/components/StoreMode.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import { useApp } from '../context/AppContext';
 import { useSocketContext } from '../context/SocketContext';
 import { StatusBar } from './StatusBar';
@@ -15,23 +14,16 @@ const WORKER_URL = 'https://keepeduroam.aitdevlabs.workers.dev';
 /**
  * Dedicated "store data" screen: this device acts as a provider, sharing
  * its eduroam connection so time accrues for later use.
+ *
+ * Which mode is active (this screen vs. UseMode) is decided entirely by
+ * ConnectionScreen's connectivity auto-detection — this component no
+ * longer switches mode itself.
  */
 export function StoreMode({ navigation }) {
-  const { deviceId, isConnected, timeData, serverStatus, points, switchMode, updateTimeData, updateServerStatus } =
+  const { deviceId, isConnected, timeData, serverStatus, points, updateTimeData, updateServerStatus } =
     useApp();
   const { isReady } = useSocketContext();
   const [refreshing, setRefreshing] = useState(false);
-
-  // Tabs stay mounted after first visit, so mode must be (re)synced on
-  // focus rather than on mount alone — this is what drives the socket's
-  // register_provider vs register_consumer choice. (The socket itself no
-  // longer reconnects on mode change — see useSocket.js — so this is now
-  // a cheap re-registration, not a full teardown.)
-  useFocusEffect(
-    useCallback(() => {
-      switchMode('store');
-    }, [switchMode])
-  );
   const [isSharing, setIsSharing] = useState(false);
 
   useEffect(() => {
