@@ -6,6 +6,7 @@ import { AppProvider, useApp } from './src/context/AppContext';
 import { SocketProvider } from './src/context/SocketContext';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { LoadingScreen } from './src/components/LoadingScreen';
+import { PrivacyGate } from './src/components/PrivacyGate';
 import { setAdsReady } from './src/utils/adsReady';
 
 // Firebase & AdMob.
@@ -19,10 +20,14 @@ import crashlytics from '@react-native-firebase/crashlytics';
 import mobileAds, { AdsConsent, AdsConsentStatus } from 'react-native-google-mobile-ads';
 
 function Root() {
-  const { isLoading } = useApp();
+  const { isLoading, privacyAccepted, acceptPrivacy } = useApp();
 
   if (isLoading) {
     return <LoadingScreen />;
+  }
+
+  if (!privacyAccepted) {
+    return <PrivacyGate onAccept={acceptPrivacy} />;
   }
 
   return (
