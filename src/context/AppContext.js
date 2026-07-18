@@ -11,6 +11,8 @@ import {
   clearToken,
   getDarkMode,
   saveDarkMode,
+  getPrivacyAccepted,
+  savePrivacyAccepted,
 } from '../utils/storage';
 
 const WORKER_URL = 'https://keepeduroam.aitdevlabs.workers.dev';
@@ -25,6 +27,7 @@ export function AppProvider({ children }) {
   const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [darkMode, setDarkModeState] = useState(true);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [timeData, setTimeData] = useState({
     stored: 0,
     used: 0,
@@ -55,12 +58,14 @@ export function AppProvider({ children }) {
       const savedUsername = await getUsername();
       const savedToken = await getToken();
       const savedDarkMode = await getDarkMode();
+      const savedPrivacyAccepted = await getPrivacyAccepted();
 
       setDeviceId(id);
       setMode(savedMode);
       setUsername(savedUsername || 'Guest');
       setToken(savedToken);
       setDarkModeState(savedDarkMode);
+      setPrivacyAccepted(savedPrivacyAccepted);
 
       const session = await getSession();
       if (session) {
@@ -116,6 +121,11 @@ export function AppProvider({ children }) {
     await saveDarkMode(next);
   };
 
+  const acceptPrivacy = async () => {
+    setPrivacyAccepted(true);
+    await savePrivacyAccepted();
+  };
+
   // Retires the current device server-side (soft reset: stored time goes
   // to 0, the ID itself remains technically valid/gettable — see backend
   // notes) and clears local identity so a completely new device ID and
@@ -151,6 +161,7 @@ export function AppProvider({ children }) {
         isConnected,
         isLoading,
         darkMode,
+        privacyAccepted,
         timeData,
         adData,
         serverStatus,
@@ -167,6 +178,7 @@ export function AppProvider({ children }) {
         setIsLoading,
         setToken,
         toggleDarkMode,
+        acceptPrivacy,
         resetDevice,
       }}
     >
