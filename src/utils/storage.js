@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   USERNAME: '@keepeduroam:username',
   TOKEN: '@keepeduroam:token',
   DARK_MODE: '@keepeduroam:dark_mode',
+  PRIVACY_ACCEPTED: '@keepeduroam:privacy_accepted',
 };
 
 export async function getDeviceId() {
@@ -156,6 +157,25 @@ export async function getDarkMode() {
     return raw === null ? true : raw === '1';
   } catch (error) {
     return true;
+  }
+}
+
+// --- Privacy policy acceptance (first-launch gate) ---
+
+export async function getPrivacyAccepted() {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.PRIVACY_ACCEPTED);
+    return raw === '1';
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function savePrivacyAccepted() {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEYS.PRIVACY_ACCEPTED, '1');
+  } catch (error) {
+    console.error('Error saving privacy acceptance:', error);
   }
 }
 
