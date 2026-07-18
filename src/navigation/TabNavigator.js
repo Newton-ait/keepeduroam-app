@@ -1,14 +1,34 @@
 // src/navigation/TabNavigator.js
 import React from 'react';
+import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { StoreMode } from '../components/StoreMode';
-import { UseMode } from '../components/UseMode';
+import { ConnectionScreen } from '../components/ConnectionScreen';
 import { EarnScreen } from '../components/EarnScreen';
 import { SettingsScreen } from '../components/SettingsScreen';
+import { useApp } from '../context/AppContext';
 import COLORS from '../theme/colors';
 
 const Tab = createBottomTabNavigator();
+
+// The Store/Use tab's label and icon reflect whichever mode is currently
+// active (decided by ConnectionScreen's connectivity auto-detection),
+// rather than being two separate static tabs.
+function ModeTabLabel({ color }) {
+  const { mode } = useApp();
+  return <Text style={{ color, fontSize: 11 }}>{mode === 'store' ? 'Store' : 'Use'}</Text>;
+}
+
+function ModeTabIcon({ color, size }) {
+  const { mode } = useApp();
+  return (
+    <Ionicons
+      name={mode === 'store' ? 'cloud-upload-outline' : 'cloud-download-outline'}
+      size={size}
+      color={color}
+    />
+  );
+}
 
 export function TabNavigator() {
   return (
@@ -30,25 +50,12 @@ export function TabNavigator() {
       }}
     >
       <Tab.Screen
-        name="Store"
-        component={StoreMode}
+        name="Connection"
+        component={ConnectionScreen}
         options={{
-          tabBarLabel: 'Store',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cloud-upload-outline" size={size} color={color} />
-          ),
-          headerTitle: '⏰ Store Session',
-        }}
-      />
-      <Tab.Screen
-        name="Use"
-        component={UseMode}
-        options={{
-          tabBarLabel: 'Use',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cloud-download-outline" size={size} color={color} />
-          ),
-          headerTitle: '⏰ Use Session',
+          tabBarLabel: ({ color }) => <ModeTabLabel color={color} />,
+          tabBarIcon: ({ color, size }) => <ModeTabIcon color={color} size={size} />,
+          headerTitle: '⏰ KeepEduroam',
         }}
       />
       <Tab.Screen
